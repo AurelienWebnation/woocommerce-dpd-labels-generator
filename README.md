@@ -1,4 +1,5 @@
 <!-- GETTING STARTED -->
+
 ## Getting Started
 
 Follow these steps to get a local copy up and running.
@@ -9,7 +10,8 @@ You need to install composer and php before reaching the installation step.
 
 ### Installation
 
-_Below is an example of how you can instruct your audience on installing and setting up your app. This template doesn't rely on any external dependencies or services._
+_Below is an example of how you can instruct your audience on installing and setting up your app. This template doesn't
+rely on any external dependencies or services._
 
 1. Install the php libraries
    ```sh
@@ -23,5 +25,5 @@ _Below is an example of how you can instruct your audience on installing and set
    define('DPD_SOAP_NAMESPACE', 'http://www.cargonet.software');
    define('DPD_WSDL_URL', 'https://e-station-testenv.cargonet.software/eprintwebservice/eprintwebservice.asmx?WSDL');
    ```
-   DPD_WSDL_URL for testing : https://e-station-testenv.cargonet.software/eprintwebservice/eprintwebservice.asmx?WSDL
-    DPD_WSDL_URL for production : https://e-station.cargonet.software/dpd-eprintwebservice/eprintwebservice.asmx?WSDL
+   DPD_WSDL_URL for testing : https://e-station-testenv.cargonet.software/eprintwebservice/eprintwebservice.asmx?WSDL \
+   DPD_WSDL_URL for production : https://e-station.cargonet.software/dpd-eprintwebservice/eprintwebservice.asmx?WSDL
