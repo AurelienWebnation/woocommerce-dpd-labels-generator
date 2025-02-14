@@ -71,8 +71,6 @@ function generate_dpd_label($order) {
     $header = new SOAPHeader(DPD_SOAP_NAMESPACE, 'UserCredentials', $auth);
     $client->__setSoapHeaders($header);
 
-    $shipping_method_id = get_shipping_method_id($order);
-
     $receiveraddress = [
         'name' => $order->get_shipping_first_name() . ' ' . $order->get_shipping_last_name(),
         'countryPrefix' => $order->get_shipping_country(),
@@ -84,11 +82,11 @@ function generate_dpd_label($order) {
 
     $shipperaddress = [
         'name' => get_bloginfo('name'),
-        'countryPrefix' => get_woocommerce_store_country(),
-        'zipCode' => get_woocommerce_store_postcode(),
-        'city' => get_woocommerce_store_city(),
-        'street' => get_woocommerce_store_address(),
-        'phoneNumber' => get_woocommerce_store_phone(),
+        'countryPrefix' => WC()->countries->get_base_country(),
+        'zipCode' => WC()->countries->get_base_postcode(),
+        'city' => WC()->countries->get_base_city(),
+        'street' => WC()->countries->get_base_address(),
+        'phoneNumber' => WOOCOMMERCE_STORE_PHONE_NUMBER,
     ];
 
 
@@ -102,6 +100,7 @@ function generate_dpd_label($order) {
         'contact' => $contact,
     ];
 
+    $shipping_method_id = get_shipping_method_id($order);
 
     if ($shipping_method_id === 'dpdfrance_relais') {
         $parcelshop = [
