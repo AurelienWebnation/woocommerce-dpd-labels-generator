@@ -96,25 +96,28 @@ function generate_dpd_label($order, $soap_client) {
     ];
 
 
-    $contact = [
-        'type' => 'AutomaticSMS',
-        'sms' => $order->get_billing_phone(),
-        'email' => $order->get_billing_email(),
-    ];
-
-    $services = [
-        'contact' => $contact,
-    ];
+    $services = [];
 
     $shipping_method_id = get_shipping_method_id($order);
-    if ($shipping_method_id === 'dpdfrance_relais') {
-        $parcelshop = [
-           'shopaddress' => [
-               'shopid' => get_dpd_relay_id($order),
-           ],
-        ];
 
-        $services['parcelshop'] = $parcelshop;
+    if ($shipping_method_id === 'dpdfrance_predict') {
+        $services['contact'] = [
+            'type' => 'AutomaticSMS',
+            'sms' => $order->get_billing_phone(),
+            'email' => $order->get_billing_email(),
+        ];
+    }
+
+    if ($shipping_method_id === 'dpdfrance_relais') {
+        $relay_id = get_dpd_relay_id($order);
+
+        if (!empty($relay_id)) {
+            $services['parcelshop'] = [
+                'shopaddress' => [
+                    'shopid' => $relay_id,
+                ],
+            ];
+        }
     }
 
     $shipment_request = [
