@@ -102,7 +102,7 @@ function generate_dpd_label($order, $soap_client) {
 
     if ($shipping_method_id === 'dpdfrance_predict') {
         $services['contact'] = [
-            'type' => 'AutomaticSMS',
+            'type' => 'Predict',
             'sms' => $order->get_billing_phone(),
             'email' => $order->get_billing_email(),
         ];
