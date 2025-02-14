@@ -122,7 +122,7 @@ function generate_dpd_label($order) {
         'customer_countrycode' => 250,
         'customer_centernumber' => 77,
         'customer_number' => 18028,
-        'referencenumber' => 'bl12345',
+        'referencenumber' => $order->get_id(),
         'weight' => get_order_total_weight($order),
     ];
 
