@@ -13,6 +13,20 @@ require_once plugin_dir_path(__FILE__) . 'config.php';
 
 use setasign\Fpdi\TcpdfFpdi;
 
+function initialize_soap_client() {
+    $client = new SoapClient(DPD_WSDL_URL);
+
+    $auth = [
+        'userid' => DPD_USERID,
+        'password' => DPD_PASSWORD,
+    ];
+
+    $header = new SOAPHeader(DPD_SOAP_NAMESPACE, 'UserCredentials', $auth);
+    $client->__setSoapHeaders($header);
+
+    return $client;
+}
+
 add_action('bulk_actions-edit-shop_order', function($bulk_actions) {
     $bulk_actions['generate_dpd_labels'] = 'Générer les étiquettes DPD';
     return $bulk_actions;
@@ -28,6 +42,8 @@ add_filter('handle_bulk_actions-edit-shop_order', function($redirect_to, $action
     $counter = 1;
     $pdf_files = [];
 
+    $soap_client = initialize_soap_client();
+
     foreach ($order_ids as $order_id) {
         $order = wc_get_order($order_id);
 
@@ -35,7 +51,7 @@ add_filter('handle_bulk_actions-edit-shop_order', function($redirect_to, $action
             continue;
         }
 
-        $pdf_content = generate_dpd_label($order);
+        $pdf_content = generate_dpd_label($order, $soap_client);
         if ($pdf_content) {
             $pdf_path = $temp_dir . $counter . '.pdf';
             file_put_contents($pdf_path, $pdf_content);
@@ -49,7 +65,7 @@ add_filter('handle_bulk_actions-edit-shop_order', function($redirect_to, $action
     $merged_pdf_path = $temp_dir . 'etiquettes-dpd-' . date('d-m-Y') . '.pdf';
     merge_pdfs($pdf_files, $merged_pdf_path);
 
-    // foreach ($pdf_files as $file) unlink($file);
+    foreach ($pdf_files as $file) unlink($file);
 
     header('Content-Type: application/pdf');
     header('Content-Disposition: attachment; filename="etiquettes-dpd-' . date('d-m-Y') . '.pdf"');
@@ -60,17 +76,7 @@ add_filter('handle_bulk_actions-edit-shop_order', function($redirect_to, $action
     exit;
 }, 10, 3);
 
-function generate_dpd_label($order) {
-    $client = new SoapClient(DPD_WSDL_URL);
-
-    $auth = [
-        'userid' => DPD_USERID,
-        'password' => DPD_PASSWORD,
-    ];
-
-    $header = new SOAPHeader(DPD_SOAP_NAMESPACE, 'UserCredentials', $auth);
-    $client->__setSoapHeaders($header);
-
+function generate_dpd_label($order, $soap_client) {
     $receiveraddress = [
         'name' => $order->get_shipping_first_name() . ' ' . $order->get_shipping_last_name(),
         'countryPrefix' => $order->get_shipping_country(),
@@ -101,7 +107,6 @@ function generate_dpd_label($order) {
     ];
 
     $shipping_method_id = get_shipping_method_id($order);
-
     if ($shipping_method_id === 'dpdfrance_relais') {
         $parcelshop = [
            'shopaddress' => [
@@ -127,7 +132,7 @@ function generate_dpd_label($order) {
     ];
 
     try {
-        $response = $client->CreateShipmentWithLabelsBc(['request' => $shipment_request]);
+        $response = $soap_client->CreateShipmentWithLabelsBc(['request' => $shipment_request]);
         $pdf_content = $response->CreateShipmentWithLabelsBcResult->labels->Label->label;
         return $pdf_content;
     } catch (SoapFault $e) {
@@ -158,10 +163,17 @@ function merge_pdfs($pdf_files, $output_path) {
 }
 
 function get_shipping_method_id($order) {
-    $shipping_method = reset($order->get_shipping_methods());
+    $shipping_methods = $order->get_shipping_methods();
 
-    return $shipping_method->get_method_id();
+    if (empty($shipping_methods)) {
+        return null;
+    }
+
+    $shipping_method = reset($shipping_methods);
+
+    return $shipping_method ? $shipping_method->get_method_id() : null;
 }
+
 
 function get_dpd_relay_id($order) {
     $shipping_address_2 = $order->get_shipping_address_2();
