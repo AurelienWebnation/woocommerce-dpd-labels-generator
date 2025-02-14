@@ -47,7 +47,7 @@ add_filter('handle_bulk_actions-edit-shop_order', function($redirect_to, $action
     foreach ($order_ids as $order_id) {
         $order = wc_get_order($order_id);
 
-        if (strpos(strtolower($order->get_shipping_method()), 'dpd') === false) {
+        if (strpos(strtolower(get_shipping_method_id($order)), 'dpd') === false) {
             continue;
         }
 
@@ -96,16 +96,20 @@ function generate_dpd_label($order, $soap_client) {
     ];
 
 
-    $services = [];
+    $services = [
+        'contact' => [
+            'sms' => $order->get_billing_phone(),
+            'email' => $order->get_billing_email(),
+            'type' => 'AutomaticSMS',
+        ]
+    ];
 
     $shipping_method_id = get_shipping_method_id($order);
 
     if ($shipping_method_id === 'dpdfrance_predict') {
-        $services['contact'] = [
+        $services['contact'] = array_merge($services['contact'], [
             'type' => 'Predict',
-            'sms' => $order->get_billing_phone(),
-            'email' => $order->get_billing_email(),
-        ];
+        ]);
     }
 
     if ($shipping_method_id === 'dpdfrance_relais') {
@@ -137,9 +141,13 @@ function generate_dpd_label($order, $soap_client) {
     try {
         $response = $soap_client->CreateShipmentWithLabelsBc(['request' => $shipment_request]);
         $pdf_content = $response->CreateShipmentWithLabelsBcResult->labels->Label->label;
+
         return $pdf_content;
     } catch (SoapFault $e) {
-        return null;
+        error_log($e);
+        echo 'Une erreur est survenue lors de la génération de l\'étiquette DPD pour la commande ' . $order->get_id() . '.<br>';
+        echo 'Merci de contacter le support technique.';
+        exit;
     }
 }
 
