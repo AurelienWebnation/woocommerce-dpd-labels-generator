@@ -2,7 +2,7 @@
 /**
  * Plugin Name: DPD Labels Generator
  * Description: Génère et fusionne les étiquettes DPD pour les commandes WooCommerce.
- * Version: 1.0.0
+ * Version: 1.1.4
  * Author: Aurélien Cabirol
  */
 
@@ -55,7 +55,13 @@ add_filter('handle_bulk_actions-edit-shop_order', function($redirect_to, $action
         if ($pdf_content) {
             $pdf_path = $temp_dir . $counter . '.pdf';
             file_put_contents($pdf_path, $pdf_content);
-            $pdf_files[] = $pdf_path;
+
+            // Rogner le PDF en 10x15 cm
+            $cropped_pdf_path = $temp_dir . $counter . '_cropped.pdf';
+            crop_pdf_to_10x15($pdf_path, $cropped_pdf_path);
+
+            $pdf_files[] = $cropped_pdf_path;
+            unlink($pdf_path);
             $counter++;
         }
     }
@@ -76,6 +82,31 @@ add_filter('handle_bulk_actions-edit-shop_order', function($redirect_to, $action
     exit;
 }, 10, 3);
 
+function crop_pdf_to_10x15($input_path, $output_path) {
+    $pdf = new TcpdfFpdi();
+    $pdf->setPrintHeader(false);
+    $pdf->setPrintFooter(false);
+
+    $pageCount = $pdf->setSourceFile($input_path);
+
+    for ($i = 1; $i <= $pageCount; $i++) {
+        $tplIdx = $pdf->importPage($i);
+        $size = $pdf->getTemplateSize($tplIdx);
+
+        $pdf->AddPage('P', [100, 150]);
+
+        $scale = min(100 / $size['width'], 150 / $size['height']);
+        $width = $size['width'] * $scale;
+        $height = $size['height'] * $scale;
+        $x = (100 - $width) / 2;
+        $y = (150 - $height) / 2;
+
+        $pdf->useTemplate($tplIdx, $x, $y, $width, $height);
+    }
+
+    $pdf->Output($output_path, 'F');
+}
+
 function generate_dpd_label($order, $soap_client) {
     $receiveraddress = [
         'name' => $order->get_shipping_first_name() . ' ' . $order->get_shipping_last_name(),
@@ -94,7 +125,6 @@ function generate_dpd_label($order, $soap_client) {
         'street' => WC()->countries->get_base_address(),
         'phoneNumber' => WOOCOMMERCE_STORE_PHONE_NUMBER,
     ];
-
 
     $services = [
         'contact' => [
@@ -126,7 +156,7 @@ function generate_dpd_label($order, $soap_client) {
 
     $shipment_request = [
         'labelType' => [
-            'type' => 'PDF',
+            'type' => 'PDF_A6',
         ],
         'receiveraddress' => $receiveraddress,
         'shipperaddress' => $shipperaddress,
@@ -161,8 +191,8 @@ function merge_pdfs($pdf_files, $output_path) {
 
         for ($i = 1; $i <= $pageCount; $i++) {
             $tplIdx = $pdf->importPage($i);
-            $pdf->AddPage();
-            $pdf->useTemplate($tplIdx);
+            $pdf->AddPage('P', [100, 150]); // Format 10x15 cm
+            $pdf->useTemplate($tplIdx, 0, 0, 100, 150);
         }
     }
 
@@ -184,7 +214,6 @@ function get_shipping_method_id($order) {
 
     return $shipping_method ? $shipping_method->get_method_id() : null;
 }
-
 
 function get_dpd_relay_id($order) {
     $shipping_address_2 = $order->get_shipping_address_2();
