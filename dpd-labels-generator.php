@@ -154,6 +154,11 @@ function generate_dpd_label($order, $soap_client) {
         }
     }
 
+    $customer_number;
+    if ($shipping_method_id === 'dpdfrance_relais') $customer_number = DPD_CUSTOMER_NUMBER_RELAY;
+    elseif ($shipping_method_id === 'dpdfrance_predict') $customer_number = DPD_CUSTOMER_NUMBER_PREDICT;
+    else $customer_number = DPD_CUSTOMER_NUMBER_CLASSIC;
+
     $shipment_request = [
         'labelType' => [
             'type' => 'PDF_A6',
@@ -162,8 +167,8 @@ function generate_dpd_label($order, $soap_client) {
         'shipperaddress' => $shipperaddress,
         'services' => $services,
         'customer_countrycode' => 250,
-        'customer_centernumber' => 77,
-        'customer_number' => 18028,
+        'customer_centernumber' => CENTER_NUMBER,
+        'customer_number' => $customber_number,
         'referencenumber' => $order->get_id(),
         'weight' => get_order_total_weight($order),
     ];
@@ -191,7 +196,7 @@ function merge_pdfs($pdf_files, $output_path) {
 
         for ($i = 1; $i <= $pageCount; $i++) {
             $tplIdx = $pdf->importPage($i);
-            $pdf->AddPage('P', [100, 150]); // Format 10x15 cm
+            $pdf->AddPage('P', [100, 150]);
             $pdf->useTemplate($tplIdx, 0, 0, 100, 150);
         }
     }
