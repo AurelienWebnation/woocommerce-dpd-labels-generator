@@ -168,7 +168,7 @@ function generate_dpd_label($order, $soap_client) {
         'services' => $services,
         'customer_countrycode' => 250,
         'customer_centernumber' => CENTER_NUMBER,
-        'customer_number' => $customber_number,
+        'customer_number' => $customer_number,
         'referencenumber' => $order->get_id(),
         'weight' => get_order_total_weight($order),
     ];
