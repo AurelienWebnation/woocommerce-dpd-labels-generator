@@ -175,7 +175,7 @@ function generate_dpd_label($order, $soap_client) {
 
     try {
         $response = $soap_client->CreateShipmentWithLabelsBc(['request' => $shipment_request]);
-        $pdf_content = $response->CreateShipmentWithLabelsBcResult->labels->Label->label;
+        $pdf_content = $response->CreateShipmentWithLabelsBcResult->labels->Label[0]->label;
 
         return $pdf_content;
     } catch (SoapFault $e) {
