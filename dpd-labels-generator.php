@@ -108,13 +108,18 @@ function crop_pdf_to_10x15($input_path, $output_path) {
 }
 
 function generate_dpd_label($order, $soap_client) {
+    $billing_phone = $order->get_billing_phone();
+    $shipping_phone = $order->get_shipping_phone();
+
+    $phone_number = !empty($billing_phone) ? $billing_phone : $shipping_phone;
+
     $receiveraddress = [
         'name' => $order->get_shipping_first_name() . ' ' . $order->get_shipping_last_name(),
         'countryPrefix' => $order->get_shipping_country(),
         'zipCode' => $order->get_shipping_postcode(),
         'city' => $order->get_shipping_city(),
         'street' => $order->get_shipping_address_1(),
-        'phoneNumber' => $order->get_billing_phone(),
+        'phoneNumber' => $phone_number,
     ];
 
     $shipperaddress = [
@@ -128,7 +133,7 @@ function generate_dpd_label($order, $soap_client) {
 
     $services = [
         'contact' => [
-            'sms' => $order->get_billing_phone(),
+            'sms' => $phone_number,
             'email' => $order->get_billing_email(),
             'type' => 'AutomaticSMS',
         ]
