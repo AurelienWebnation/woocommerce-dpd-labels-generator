@@ -121,6 +121,9 @@ function generate_dpd_label($order, $soap_client) {
         'street' => $order->get_shipping_address_1(),
         'phoneNumber' => $phone_number,
     ];
+    if ($order->get_shipping_address_2()) {
+        $receiveraddress['name2'] = $order->get_shipping_address_1() . '<br>' . $order->get_shipping_address_2();
+    }
 
     $shipperaddress = [
         'name' => get_bloginfo('name'),
