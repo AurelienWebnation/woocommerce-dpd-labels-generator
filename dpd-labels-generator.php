@@ -180,7 +180,7 @@ function generate_dpd_label($order, $soap_client) {
 
     if ($order->get_shipping_address_2()) {
         $shipment_request['receiverinfo'] = [
-            'name2' => $order->get_shipping_address_2();
+            'name2' => $order->get_shipping_address_2()
         ];
     }
 
